@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+  <!-- CSS only -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.2/dist/css/bootstrap.min.css" rel="stylesheet"
+    integrity="sha384-Zenh87qX5JnK2Jl0vWa8Ck2rdkQ2Bzep5IDxbcnCeuOxjzrPF/et3URy9Bv1WTRi" crossorigin="anonymous">
+  <title>Vite App</title>
+  <!-- JavaScript Bundle with Popper -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.2/dist/js/bootstrap.bundle.min.js"
+    integrity="sha384-OERcA2EqjJCMA+/3y+gxIOqMEjwtxJY7qPCqsdltbNJuaOe923+mo//f6V8Qbsw3"
+    crossorigin="anonymous"></script>
+</head>
+
+<body>
+  <div id="app">
+
+    <!-- NAVBAR -->
+    <nav class="navbar navbar-expand-lg bg-light position-sticky" style="top: 0;">
+      <div class="container-fluid">
+        <a class="navbar-brand" href="#">
+          <h5>MyAnimeList</h5>
+        </a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent"
+          aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+          <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarSupportedContent">
+          <div class="navbar-nav me-auto">
+          </div>
+          <form class="d-flex" role="search">
+            <button class="btn btn-outline-danger" type="submit" v-if="page !== 'login'">Logout</button>
+          </form>
+        </div>
+      </div>
+    </nav>
+    <!-- END OF NAVBAR -->
+
+    <!-- LOGIN PAGE -->
+    <section id="login-page" v-if="page === 'login'">
+      <div class="container-sm py-5">
+        <h3 class="text-center">Welcome To MyAnimeList</h3>
+        <form class="w-50 mx-auto py-5" v-on:submit.prevent="handleOnLogin">
+          <div class="mb-3">
+            <label for="login-email" class="form-label">Email address</label>
+            <input type="email" v-model="state.login.email" class="form-control" id="login-email"
+              aria-describedby="emailHelp">
+          </div>
+          <div class="mb-3">
+            <label for="login-password" class="form-label">Password</label>
+            <input type="password" v-model="state.login.password" class="form-control" id="login-password">
+          </div>
+          <div class="d-flex justify-content-center">
+            <button type="submit" class="btn btn-primary px-3">Login</button>
+          </div>
+        </form>
+      </div>
+    </section>
+    <!-- END OF LOGIN PAGE -->
+
+    <!-- HOME PAGE -->
+    <section id="home-page" v-if="page === 'home'">
+      <div class="container">
+        <h2 class="text-center py-3">My Anime List</h2>
+        <button class="btn btn-primary" style="position: fixed; bottom: 20px; right: 20px; z-index: 100;"
+          type="button" v-on:click="navigatePage('create-page')">
+          <span style="font-weight: bold; font-size: 1.2rem;">+</span> Add
+        </button>
+
+        <h5 class="text-center py-5" style="font-weight: normal;" v-if="animeList.length === 0">Gaada cuy</h5>
+        <table class="table table-striped" v-else>
+          <thead>
+            <tr>
+              <th scope="col" class="text-center">No</th>
+              <th scope="col" class="text-center">Image</th>
+              <th scope="col" class="text-center">Detail</th>
+              <th scope="col" class="text-center">Action</th>
+            </tr>
+          </thead>
+          <tbody class="table-group-divider">
+            <tr v-for="anime in animeList">
+              <td>{{ anime.id }}</td>
+              <td><img :src="anime.imgUrl" :alt="anime.title" /></td>
+              <td>
+                <div class="px-2">
+                  <h3>{{ anime.title }}</h3>
+                  <p style="text-align: justify">{{ anime.sinopsis }}</p>
+                </div>
+              </td>
+              <td class="align-middle">
+                <form v-on:submit.prevent="handleOnDelete($event, anime.id)">
+                  <button class="btn btn-danger mx-3" type="submit">Delete</button>
+                </form>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+    <!-- END OF HOME PAGE -->
+
+    <!-- ADD ANIME PAGE -->
+    <section id="create-page" v-if="page === 'create-page'">
+      <div class="container">
+        <h2>Add Anime List</h2>
+        <form v-on:submit.prevent="handleOnCreate">
+          <div class="mb-3">
+            <label for="create-title" class="form-label">Title</label>
+            <input type="text" v-model="state.anime.title" class="form-control" id="create-title" aria-describedby="creatingTitle">
+          </div>
+          <div class="mb-3">
+            <label for="create-imageUrl" class="form-label">Image URL</label>
+            <input type="text" v-model="state.anime.imgUrl" class="form-control" id="create-imageUrl" aria-describedby="creatingTitle">
+          </div>
+          <div class="mb-3">
+            <label for="create-sinopsis" class="form-label">Sinopsis</label>
+            <textarea class="form-control" v-model="state.anime.sinopsis" id="create-sinopsis" rows="5"></textarea>
+          </div>
+          <button type="submit" class="btn btn-primary">Create</button>
+          <button type="button" class="btn btn-secondary mx-2" v-on:click="handleOnCancel">Cancel</button>
+        </form>
+      </div>
+    </section>
+    <!-- END OF ADD ANIME PAGE -->
+
+  </div>
+
+  <script>
+    const { createApp } = Vue
+
+    createApp({
+      data() {
+        return {
+          page: 'login',
+          state: {
+            login: {
+              email: 'assistance.xavier@gmail.com',
+              password: 'tikaganteng'
+            },
+            anime: {
+              title: '',
+              imgUrl: '',
+              sinopsis: ''
+            }
+          },
+          animeList: [
+            {
+              "id": 1,
+              "title": "Your Name",
+              "imgUrl": "https://cdn.myanimelist.net/images/anime/5/87048.jpg",
+              "sinopsis": "Mitsuha Miyamizu, a high school girl, yearns to live the life of a boy in the bustling city of Tokyo—a dream that stands in stark contrast to her present life in the countryside. Meanwhile in the city, Taki Tachibana lives a busy life as a high school student while juggling his part-time job and hopes for a future in architecture. One day, Mitsuha awakens in a room that is not her own and suddenly finds herself living the dream life in Tokyo—but in Taki's body! Elsewhere, Taki finds himself living Mitsuha's life in the humble countryside. In pursuit of an answer to this strange phenomenon, they begin to search for one another. Kimi no Na wa. revolves around Mitsuha and Taki's actions, which begin to have a dramatic impact on each other's lives, weaving them into a fabric held together by fate and circumstance."
+            },
+            {
+              "id": 2,
+              "title": "Dr. Stone",
+              "imgUrl": "https://cdn.myanimelist.net/images/anime/1613/102576.jpg",
+              "sinopsis": "After five years of harboring unspoken feelings, high-schooler Taiju Ooki is finally ready to confess his love to Yuzuriha Ogawa. Just when Taiju begins his confession however, a blinding green light strikes the Earth and petrifies mankind around the world—turning every single human into stone. Several millennia later, Taiju awakens to find the modern world completely nonexistent, as nature has flourished in the years humanity stood still. Among a stone world of statues, Taiju encounters one other living human: his science-loving friend Senkuu, who has been active for a few months. Taiju learns that Senkuu has developed a grand scheme—to launch the complete revival of civilization with science. Taiju's brawn and Senkuu's brains combine to forge a formidable partnership, and they soon uncover a method to revive those petrified. However, Senkuu's master plan is threatened when his ideologies are challenged by those who awaken. All the while, the reason for mankind's petrification remains unknown."
+            },
+            {
+              "id": 3,
+              "title": "Stein's Gate",
+              "imgUrl": "https://cdn.myanimelist.net/images/anime/1935/127974.jpg",
+              "sinopsis": "Eccentric scientist Rintarou Okabe has a never-ending thirst for scientific exploration. Together with his ditzy but well-meaning friend Mayuri Shiina and his roommate Itaru Hashida, Rintarou founds the Future Gadget Laboratory in the hopes of creating technological innovations that baffle the human psyche. Despite claims of grandeur, the only notable \"gadget\" the trio have created is a microwave that has the mystifying power to turn bananas into green goo. However, when Rintarou decides to attend neuroscientist Kurisu Makise's conference on time travel, he experiences a series of strange events that lead him to believe that there is more to the \"Phone Microwave\" gadget than meets the eye. Apparently able to send text messages into the past using the microwave, Rintarou dabbles further with the \"time machine,\" attracting the ire and attention of the mysterious organization SERN. Due to the novel discovery, Rintarou and his friends find themselves in an ever-present danger. As he works to mitigate the damage his invention has caused to the timeline, he is not only fighting a battle to save his loved ones, but also one against his degrading sanity."
+            },
+          ],
+        }
+      },
+      methods: {
+        handleOnLogin() {
+          const email = this.state.login.email;
+          const password = this.state.login.password;
+
+          const emailMatch = 'assistance.xavier@gmail.com';
+          const passwordMatch = 'tikaganteng';
+
+          if (email === emailMatch && password === passwordMatch) {
+            this.page = 'home';
+          } else {
+            alert('Email or Password is wrong');
+          }
+        },
+        navigatePage(page) {
+          this.page = page;
+        },
+        handleOnLogout() {
+          this.state.login.email = '';
+          this.state.login.password = '';
+          this.page = 'login';
+        },
+        handleOnCancel() {
+          this.state.anime.title = '';
+          this.state.anime.imgUrl = '';
+          this.state.anime.sinopsis = '';
+          this.page = 'home';
+        },
+        handleOnCreate() {
+          // get state
+          const title = this.state.anime.title;
+          const imgUrl = this.state.anime.imgUrl;
+          const sinopsis = this.state.anime.sinopsis;
+
+          this.animeList.push({
+            id: this.animeList[this.animeList.length - 1].id + 1,
+            title,
+            imgUrl,
+            sinopsis
+          });
+          this.page = 'home';
+
+          // clear state
+          this.state.anime.title = '';
+          this.state.anime.imgUrl = '';
+          this.state.anime.sinopsis = '';
+        },
+        handleOnDelete(event, id) {
+          console.log(event, id)
+          this.animeList = this.animeList.filter(anime => anime.id !== id);
+        }
+      }
+    }).mount('#app')
+  </script>
+</body>
+
+</html>
